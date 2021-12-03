@@ -13,77 +13,77 @@ import java.util.logging.Logger;
 import static edu.blue.Utils.*;
 
 /**
- * This helper class is used for performing Delete Operation on the records
+ * This helper class is used to perform Delete Operation on the records
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class DeleteOperationHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(DeleteOperationHelper.class.getName());
+    private static final Logger logger = Logger.getLogger(DeleteOperationHelper.class.getName());
 
     /**
      * This method performs the delete operation
      *
-     * @param deleteTableString
+     * @param deleteTableRecordQuerytring
      */
-    public static void performDeleteOperation(String deleteTableString) {
-        ArrayList<String> deleteTableTokens = new ArrayList<>(Arrays.asList(deleteTableString.split(" ")));
+    public static void handleDeleteOperation(String deleteTableRecordQuerytring) {
+        ArrayList<String> deleteTableTokens = new ArrayList<>(Arrays.asList(deleteTableRecordQuerytring.split(" ")));
 
         String tableName = "";
 
         try {
 
             if (!deleteTableTokens.get(1).equals("from") || !deleteTableTokens.get(2).equals("table")) {
-                System.out.println("Please check your Syntax!");
+                System.out.println("Invalid Syntax!");
                 return;
             }
 
             tableName = deleteTableTokens.get(3);
 
-            TableInfoHandler metaData = new TableInfoHandler(tableName);
-            WhereConditionProcessor condition;
+            TableInfoHandler tableMetaData = new TableInfoHandler(tableName);
+            WhereConditionProcessor whereCondition;
             try {
-                condition = getConditionFromCurrentQuery(metaData, deleteTableString);
+                whereCondition = getConditionFromCurrentQuery(tableMetaData, deleteTableRecordQuerytring);
 
             } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Exception while deleting", e);
+                logger.log(Level.SEVERE, "Exception while performing delete operation", e);
                 return;
             }
             RandomAccessFile tableFile = new RandomAccessFile(getTableFilePath(tableName), "rw");
 
-            BPlusTree tree = new BPlusTree(tableFile, metaData.rootPageNumber, metaData.tableName);
-            List<DataRecordForTable> deletedRecords = new ArrayList<DataRecordForTable>();
+            BPlusTree tree = new BPlusTree(tableFile, tableMetaData.rootPageNumber, tableMetaData.tableName);
+            List<DataRecordForTable> deletedRecordList = new ArrayList<DataRecordForTable>();
             int count = 0;
-            for (int pageNo : tree.getAllLeaveNodes(condition)) {
+            for (int pageNumber : tree.getAllLeaveNodes(whereCondition)) {
                 short deleteCountPerPage = 0;
-                Page page = new Page(tableFile, pageNo);
-                for (DataRecordForTable record : page.getPageRecords()) {
-                    if (condition != null) {
-                        if (!condition.checkCondition(record.getAttributeList().get(condition.columnOrdinal).fieldValue))
+                Page page = new Page(tableFile, pageNumber);
+                for (DataRecordForTable recordDetail : page.getPageRecords()) {
+                    if (whereCondition != null) {
+                        if (!whereCondition.checkCondition(recordDetail.getAttributeList().get(whereCondition.columnOrdinal).fieldValue))
                             continue;
                     }
 
-                    deletedRecords.add(record);
+                    deletedRecordList.add(recordDetail);
                     page.DeleteTableRecord(tableName,
-                            Integer.valueOf(record.IndexPageHead - deleteCountPerPage).shortValue());
+                            Integer.valueOf(recordDetail.IndexPageHead - deleteCountPerPage).shortValue());
                     deleteCountPerPage++;
                     count++;
                 }
             }
 
-            /* Update the Index and delete all the rows if no condition is given*/
+            /* Update the Index and delete all the rows if no whereCondition is given*/
 
-            if (condition == null) {
-                final String table_Name = tableName;
+            if (whereCondition == null) {
+                final String tName = tableName;
 
                 File f = new File("data/");
-                File[] matchingFiles = f.listFiles((dir, name) -> name.startsWith(table_Name) && name.endsWith("ndx"));
+                File[] matchingFiles = f.listFiles((dir, name) -> name.startsWith(tName) && name.endsWith("ndx"));
 
 
-                for (int i = 0; i < metaData.columnNameAttrList.size(); i++) {
-                    if (metaData.columnNameAttrList.get(i).hasIndex) {
+                for (int i = 0; i < tableMetaData.columnNameAttrList.size(); i++) {
+                    if (tableMetaData.columnNameAttrList.get(i).hasIndex) {
 
-                        RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, metaData.columnNameAttrList.get(i).columnName),
+                        RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, tableMetaData.columnNameAttrList.get(i).columnName),
                                 "rw");
                         Page.addNewPage(indexFile, PageNodeType.LEAF_INDEX, -1, -1);
                         indexFile.close();
@@ -92,11 +92,11 @@ public class DeleteOperationHelper {
                 }
 
             } else {
-                for (int i = 0; i < metaData.columnNameAttrList.size(); i++) {
-                    if (metaData.columnNameAttrList.get(i).hasIndex) {
-                        RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, metaData.columnNameAttrList.get(i).columnName), "rw");
+                for (int i = 0; i < tableMetaData.columnNameAttrList.size(); i++) {
+                    if (tableMetaData.columnNameAttrList.get(i).hasIndex) {
+                        RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, tableMetaData.columnNameAttrList.get(i).columnName), "rw");
                         BTree bTree = new BTree(indexFile);
-                        for (DataRecordForTable record : deletedRecords) {
+                        for (DataRecordForTable record : deletedRecordList) {
                             bTree.delete(record.getAttributeList().get(i), record.rowId);
                         }
                         indexFile.close();
@@ -106,10 +106,10 @@ public class DeleteOperationHelper {
 
             System.out.println();
             tableFile.close();
-            System.out.println(count + " records deleted successfully.");
+            System.out.println(count + " Records deleted successfully.");
 
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Exception while deleting row in table " + tableName, e);
+            logger.log(Level.SEVERE, "Exception occur while deleting row in table " + tableName, e);
         }
 
     }
