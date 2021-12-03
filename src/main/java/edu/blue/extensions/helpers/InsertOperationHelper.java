@@ -13,29 +13,29 @@ import static edu.blue.Utils.getIndexFilePath;
 import static edu.blue.Utils.getTableFilePath;
 
 /**
- * This helper class is used to perform insert operation on the tables
+ * This helper class is used to handle insert operation on the tables
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class InsertOperationHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(InsertOperationHelper.class.getName());
+    private static final Logger logger = Logger.getLogger(InsertOperationHelper.class.getName());
 
     /**
-     * This method performs the insertion operation
+     * This method handles the insertion operation
      *
-     * @param queryString
+     * @param inputQueryString
      */
-    public static void performInsertOperation(String queryString) {
-        ArrayList<String> insertTokens = new ArrayList<String>(Arrays.asList(queryString.split(" ")));
+    public static void handleInsertOperation(String inputQueryString) {
+        ArrayList<String> insertTokenList = new ArrayList<String>(Arrays.asList(inputQueryString.split(" ")));
 
-        if (!insertTokens.get(1).equals("into") || !queryString.contains(") values")) {
+        if (!insertTokenList.get(1).equals("into") || !inputQueryString.contains(") values")) {
             System.out.println("Invalid Syntax!");
             return;
         }
 
         try {
-            String tableName = insertTokens.get(2);
+            String tableName = insertTokenList.get(2);
             if (tableName.trim().length() == 0) {
                 System.out.println("Table name cannot be empty!");
                 return;
@@ -44,102 +44,102 @@ public class InsertOperationHelper {
             if (tableName.indexOf("(") > -1) {
                 tableName = tableName.substring(0, tableName.indexOf("("));
             }
-            TableInfoHandler dstMetaData = new TableInfoHandler(tableName);
+            TableInfoHandler tableMetaData = new TableInfoHandler(tableName);
 
-            if (!dstMetaData.tableExists) {
+            if (!tableMetaData.tableExists) {
                 System.out.println("Table does not exist!");
                 return;
             }
 
-            ArrayList<String> columnTokens = new ArrayList<String>(Arrays.asList(
-                    queryString.substring(queryString.indexOf("(") + 1, queryString.indexOf(") values")).split(",")));
+            ArrayList<String> columnTokenList = new ArrayList<String>(Arrays.asList(
+                    inputQueryString.substring(inputQueryString.indexOf("(") + 1, inputQueryString.indexOf(") values")).split(",")));
 
             // Column List validation
-            for (String colToken : columnTokens) {
-                if (!dstMetaData.columnNamesList.contains(colToken.trim())) {
-                    System.out.println("Invalid column : " + colToken.trim());
+            for (String colTokenRecord : columnTokenList) {
+                if (!tableMetaData.columnNamesList.contains(colTokenRecord.trim())) {
+                    System.out.println("Invalid column : " + colTokenRecord.trim());
                     return;
                 }
             }
 
-            String valuesString = queryString.substring(queryString.indexOf("values") + 6, queryString.length() - 1);
+            String values = inputQueryString.substring(inputQueryString.indexOf("values") + 6, inputQueryString.length() - 1);
 
-            ArrayList<String> valueTokens = new ArrayList<String>(Arrays
-                    .asList(valuesString.substring(valuesString.indexOf("(") + 1, valuesString.indexOf(")")).split(",")));
+            ArrayList<String> valueTokenList = new ArrayList<String>(Arrays
+                    .asList(values.substring(values.indexOf("(") + 1, values.indexOf(")")).split(",")));
 
             // fill attributes to insert
-            List<CellRecords> attributeToInsert = new ArrayList<>();
+            List<CellRecords> columnToInsert = new ArrayList<>();
 
-            for (ColumnValueConstrain colInfo : dstMetaData.columnNameAttrList) {
+            for (ColumnValueConstrain colInformation : tableMetaData.columnNameAttrList) {
                 int i = 0;
-                boolean columnProvided = false;
-                for (i = 0; i < columnTokens.size(); i++) {
-                    if (columnTokens.get(i).trim().equals(colInfo.columnName)) {
-                        columnProvided = true;
+                boolean columnExists = false;
+                for (i = 0; i < columnTokenList.size(); i++) {
+                    if (columnTokenList.get(i).trim().equals(colInformation.columnName)) {
+                        columnExists = true;
                         try {
-                            String value = valueTokens.get(i).replace("'", "").replace("\"", "").trim();
-                            if (valueTokens.get(i).trim().equals("null")) {
-                                if (!colInfo.isNullable) {
-                                    System.out.println("Cannot Insert NULL into " + colInfo.columnName);
+                            String value = valueTokenList.get(i).replace("'", "").replace("\"", "").trim();
+                            if (valueTokenList.get(i).trim().equals("null")) {
+                                if (!colInformation.isNullable) {
+                                    System.out.println("Cannot Insert NULL into " + colInformation.columnName);
                                     return;
                                 }
-                                colInfo.dataType = DBSupportedDataType.NULL;
+                                colInformation.dataType = DBSupportedDataType.NULL;
                                 value = value.toUpperCase();
                             }
-                            CellRecords attr = new CellRecords(colInfo.dataType, value);
-                            attributeToInsert.add(attr);
+                            CellRecords attr = new CellRecords(colInformation.dataType, value);
+                            columnToInsert.add(attr);
                             break;
                         } catch (Exception e) {
-                            System.out.println("Invalid data format for " + columnTokens.get(i) + " values: "
-                                    + valueTokens.get(i));
+                            System.out.println("Invalid data format for " + columnTokenList.get(i) + " with the values: "
+                                    + valueTokenList.get(i));
                             return;
                         }
                     }
                 }
-                if (columnTokens.size() > i) {
-                    columnTokens.remove(i);
-                    valueTokens.remove(i);
+                if (columnTokenList.size() > i) {
+                    columnTokenList.remove(i);
+                    valueTokenList.remove(i);
                 }
 
-                if (!columnProvided) {
-                    if (colInfo.isNullable)
-                        attributeToInsert.add(new CellRecords(DBSupportedDataType.NULL, "NULL"));
+                if (!columnExists) {
+                    if (colInformation.isNullable)
+                        columnToInsert.add(new CellRecords(DBSupportedDataType.NULL, "NULL"));
                     else {
-                        System.out.println("Cannot Insert NULL into " + colInfo.columnName);
+                        System.out.println("Cannot Insert NULL into " + colInformation.columnName);
                         return;
                     }
                 }
             }
 
-            RandomAccessFile dstTable = new RandomAccessFile(getTableFilePath(tableName), "rw");
-            int dstPageNo = BPlusTree.getPageNumberForInsertion(dstTable, dstMetaData.rootPageNumber);
-            Page dstPage = new Page(dstTable, dstPageNo);
+            RandomAccessFile dsTable = new RandomAccessFile(getTableFilePath(tableName), "rw");
+            int dsPageNo = BPlusTree.getPageNumberForInsertion(dsTable, tableMetaData.rootPageNumber);
+            Page dsPage = new Page(dsTable, dsPageNo);
 
-            int rowNo = dstPage.addTableRow(tableName, attributeToInsert);
+            int rowNo = dsPage.addTableRow(tableName, columnToInsert);
 
             if (rowNo != -1) {
 
-                for (int i = 0; i < dstMetaData.columnNameAttrList.size(); i++) {
-                    ColumnValueConstrain col = dstMetaData.columnNameAttrList.get(i);
+                for (int i = 0; i < tableMetaData.columnNameAttrList.size(); i++) {
+                    ColumnValueConstrain col = tableMetaData.columnNameAttrList.get(i);
 
                     if (col.hasIndex) {
                         RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, col.columnName),
                                 "rw");
                         BTree bTree = new BTree(indexFile);
-                        bTree.insert(attributeToInsert.get(i), rowNo);
+                        bTree.insert(columnToInsert.get(i), rowNo);
                         indexFile.close();
                     }
 
                 }
             }
 
-            dstTable.close();
+            dsTable.close();
             if (rowNo != -1)
                 System.out.println("Record Inserted Successfully.");
             System.out.println();
 
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Exception performing insert operation", e);
+            logger.log(Level.SEVERE, "Exception while performing insert operation", e);
         }
     }
 }
