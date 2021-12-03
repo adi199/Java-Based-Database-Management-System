@@ -96,7 +96,7 @@ public class Commands {
         String identifier = commandTokens.get(1);
 
         if (identifier.equalsIgnoreCase("index")) {
-            IndexCreationHelper.performIndexCreation(command);
+            IndexCreationHelper.handleIndexCreation(command);
             return;
         }
 
@@ -104,7 +104,7 @@ public class Commands {
 
         /*  Code to create a .tbl file to contain table data */
         try {
-            CreateTableHelper.performCreateTableOperation(command);
+            CreateTableHelper.handleCreateTableOperation(command);
             /*  Create RandomAccessFile tableFile in read-write mode.
              *  Note that this doesn't create the table file in the correct directory structure
              */
@@ -149,14 +149,14 @@ public class Commands {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the insertRecord method");
         /* TODO: Your code goes here */
-        InsertOperationHelper.performInsertOperation(tokensToCommandString(commandTokens));
+        InsertOperationHelper.handleInsertOperation(tokensToCommandString(commandTokens));
     }
 
     public static void parseDelete(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the deleteRecord method");
         /* TODO: Your code goes here */
-        DeleteOperationHelper.performDeleteOperation(tokensToCommandString(commandTokens));
+        DeleteOperationHelper.handleDeleteOperation(tokensToCommandString(commandTokens));
     }
 
 
@@ -166,7 +166,7 @@ public class Commands {
     public static void dropTable(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the dropTable method.");
-        DropOperationHelper.dropTable(tokensToCommandString(commandTokens));
+        DropOperationHelper.handleDropTableOperation(tokensToCommandString(commandTokens));
     }
 
     /**
@@ -175,7 +175,7 @@ public class Commands {
     public static void parseQuery(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the parseQuery method");
-        SelectOperationHelper.performSelectOperation(tokensToCommandString(commandTokens));
+        SelectOperationHelper.handleSelectOperation(tokensToCommandString(commandTokens));
     }
 
     /**
