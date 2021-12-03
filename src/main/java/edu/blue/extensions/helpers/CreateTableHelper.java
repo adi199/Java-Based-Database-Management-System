@@ -10,33 +10,35 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static edu.blue.Utils.getTableFilePath;
-import static edu.blue.extensions.helpers.DeleteOperationHelper.performDeleteOperation;
-import static edu.blue.extensions.helpers.IndexCreationHelper.performIndexCreation;
+import static edu.blue.extensions.helpers.DeleteOperationHelper.handleDeleteOperation;
+import static edu.blue.extensions.helpers.IndexCreationHelper.handleIndexCreation;
 
 /**
- * This helper class is used for Table creation in the Database
+ * This helper class is used to create table in the Database
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class CreateTableHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(CreateTableHelper.class.getName());
+    // logs event
+    private static final Logger logger = Logger.getLogger(CreateTableHelper.class.getName());
 
     /**
      * This method perform the table creation operation
      *
-     * @param createTableString
+     * @param createTableQueryString
      */
-    public static void performCreateTableOperation(String createTableString) {
-        ArrayList<String> createTableTokens = new ArrayList<>(Arrays.asList(createTableString.split(" ")));
-        if (!createTableTokens.get(1).equals("table") || (!createTableString.contains("(") || !createTableString.contains(")"))) {
-            LOGGER.warning("Please check Syntax!");
+    //
+    public static void handleCreateTableOperation(String createTableQueryString) {
+        ArrayList<String> createTableTokens = new ArrayList<>(Arrays.asList(createTableQueryString.split(" ")));
+        if (!createTableTokens.get(1).equals("table") || (!createTableQueryString.contains("(") || !createTableQueryString.contains(")"))) {
+            logger.warning("Invalid Syntax!");
 
             return;
         }
         String tableName = createTableTokens.get(2);
         if (tableName.trim().length() == 0) {
-            LOGGER.warning("Table name is required!");
+            logger.warning("Please provide name of Table.");
             return;
         }
         try {
@@ -45,95 +47,96 @@ public class CreateTableHelper {
                 tableName = tableName.substring(0, tableName.indexOf("("));
             }
 
-            List<ColumnValueConstrain> lstcolumnInformation = new ArrayList<>();
-            ArrayList<String> columnTokens = new ArrayList<>(Arrays.asList(createTableString
-                    .substring(createTableString.indexOf("(") + 1, createTableString.length() - 1).split(",")));
+            List<ColumnValueConstrain> columnList = new ArrayList<>();
+            ArrayList<String> columnTokens = new ArrayList<>(Arrays.asList(createTableQueryString
+                    .substring(createTableQueryString.indexOf("(") + 1, createTableQueryString.length() - 1).split(",")));
 
-            short ordinalPosition = 1;
+            short order = 1;
 
-            String primaryKeyColumn = "";
+            String primaryKeyCol = "";
 
+            // Loop through column tokens
             for (String columnToken : columnTokens) {
 
-                ArrayList<String> colInfoToken = new ArrayList<>(Arrays.asList(columnToken.trim().split(" ")));
-                ColumnValueConstrain colInfo = new ColumnValueConstrain();
-                colInfo.tableName = tableName;
-                colInfo.columnName = colInfoToken.get(0);
-                colInfo.isNullable = true;
-                colInfo.dataType = DBSupportedDataType.get(colInfoToken.get(1).toUpperCase());
-                for (int i = 0; i < colInfoToken.size(); i++) {
+                ArrayList<String> columnInfoToken = new ArrayList<>(Arrays.asList(columnToken.trim().split(" ")));
+                ColumnValueConstrain colInformation = new ColumnValueConstrain();
+                colInformation.tableName = tableName;
+                colInformation.columnName = columnInfoToken.get(0);
+                colInformation.isNullable = true;
+                colInformation.dataType = DBSupportedDataType.get(columnInfoToken.get(1).toUpperCase());
+                for (int i = 0; i < columnInfoToken.size(); i++) {
 
-                    if ((colInfoToken.get(i).equals("null"))) {
-                        colInfo.isNullable = true;
+                    if ((columnInfoToken.get(i).equals("null"))) {
+                        colInformation.isNullable = true;
                     }
-                    if (colInfoToken.get(i).contains("not") && (colInfoToken.get(i + 1).contains("null"))) {
-                        colInfo.isNullable = false;
+                    if (columnInfoToken.get(i).contains("not") && (columnInfoToken.get(i + 1).contains("null"))) {
+                        colInformation.isNullable = false;
                         i++;
                     }
 
-                    if ((colInfoToken.get(i).equals("unique"))) {
-                        colInfo.isUnique = true;
-                    } else if (colInfoToken.get(i).contains("primary") && (colInfoToken.get(i + 1).contains("key"))) {
-                        colInfo.isPrimaryKey = true;
-                        colInfo.isUnique = true;
-                        colInfo.isNullable = false;
-                        primaryKeyColumn = colInfo.columnName;
+                    if ((columnInfoToken.get(i).equals("unique"))) {
+                        colInformation.isUnique = true;
+                    } else if (columnInfoToken.get(i).contains("primary") && (columnInfoToken.get(i + 1).contains("key"))) {
+                        colInformation.isPrimaryKey = true;
+                        colInformation.isUnique = true;
+                        colInformation.isNullable = false;
+                        primaryKeyCol = colInformation.columnName;
                         i++;
                     }
 
                 }
-                colInfo.ordinalPosition = ordinalPosition++;
-                lstcolumnInformation.add(colInfo);
+                colInformation.ordinalPosition = order++;
+                columnList.add(colInformation);
 
             }
 
-            /* Updates system files */
-            RandomAccessFile davisbaseTablesCatalog = new RandomAccessFile(
+            // Updates system files
+            RandomAccessFile tablesCatalog = new RandomAccessFile(
                     getTableFilePath(DBOperationsProcessor.tablesTable), "rw");
-            TableInfoHandler davisbaseTableMetaData = new TableInfoHandler(DBOperationsProcessor.tablesTable);
+            TableInfoHandler tableMetaData = new TableInfoHandler(DBOperationsProcessor.tablesTable);
 
-            int pageNo = BPlusTree.getPageNumberForInsertion(davisbaseTablesCatalog, davisbaseTableMetaData.rootPageNumber);
+            int pageNumber = BPlusTree.getPageNumberForInsertion(tablesCatalog, tableMetaData.rootPageNumber);
 
-            Page page = new Page(davisbaseTablesCatalog, pageNo);
+            Page pageDetail = new Page(tablesCatalog, pageNumber);
 
-            int rowNo = page.addTableRow(DBOperationsProcessor.tablesTable,
+            int rowNo = pageDetail.addTableRow(DBOperationsProcessor.tablesTable,
                     Arrays.asList(new CellRecords[]{new CellRecords(DBSupportedDataType.TEXT, tableName), // DBOperationsProcessor.tablesTable->test
                             new CellRecords(DBSupportedDataType.INT, "0"), new CellRecords(DBSupportedDataType.SMALLINT, "0"),
                             new CellRecords(DBSupportedDataType.SMALLINT, "0")}));
-            davisbaseTablesCatalog.close();
+            tablesCatalog.close();
 
             if (rowNo == -1) {
-                LOGGER.warning("! Duplicate table Name");
+                logger.warning("Duplicate table Name, Please provide unique table name.");
                 return;
             }
             RandomAccessFile tableFile = new RandomAccessFile(getTableFilePath(tableName), "rw");
             Page.addNewPage(tableFile, PageNodeType.LEAF_TYPE, -1, -1);
             tableFile.close();
 
-            RandomAccessFile davisbaseColumnsCatalog = new RandomAccessFile(
+            RandomAccessFile tableColumnsCatalog = new RandomAccessFile(
                     getTableFilePath(DBOperationsProcessor.columnsTable), "rw");
-            TableInfoHandler davisbaseColumnsMetaData = new TableInfoHandler(DBOperationsProcessor.columnsTable);
-            pageNo = BPlusTree.getPageNumberForInsertion(davisbaseColumnsCatalog, davisbaseColumnsMetaData.rootPageNumber);
+            TableInfoHandler tableColumnsMetaData = new TableInfoHandler(DBOperationsProcessor.columnsTable);
+            pageNumber = BPlusTree.getPageNumberForInsertion(tableColumnsCatalog, tableColumnsMetaData.rootPageNumber);
 
-            Page page1 = new Page(davisbaseColumnsCatalog, pageNo);
+            Page page1 = new Page(tableColumnsCatalog, pageNumber);
 
-            for (ColumnValueConstrain column : lstcolumnInformation) {
-                page1.addNewColumn(column);
+            for (ColumnValueConstrain columnDetail : columnList) {
+                page1.addNewColumn(columnDetail);
             }
 
-            davisbaseColumnsCatalog.close();
+            tableColumnsCatalog.close();
 
             System.out.println("Table created successfully.");
 
-            if (primaryKeyColumn.length() > 0) {
-                performIndexCreation("create index on " + tableName + "(" + primaryKeyColumn + ")");
+            if (primaryKeyCol.length() > 0) {
+                handleIndexCreation("create index on " + tableName + "(" + primaryKeyCol + ")");
             }
         } catch (Exception e) {
 
-            LOGGER.log(Level.SEVERE, "Exception creating table, might be Syntax Error!", e);
-            performDeleteOperation("delete from table " + DBOperationsProcessor.tablesTable + " where table_name = '" + tableName
+            logger.log(Level.SEVERE, "Exception while creating table, might be Syntax Error!", e);
+            handleDeleteOperation("delete from table " + DBOperationsProcessor.tablesTable + " where table_name = '" + tableName
                     + "' ");
-            performDeleteOperation("delete from table " + DBOperationsProcessor.columnsTable + " where table_name = '" + tableName
+            handleDeleteOperation("delete from table " + DBOperationsProcessor.columnsTable + " where table_name = '" + tableName
                     + "' ");
         }
 
