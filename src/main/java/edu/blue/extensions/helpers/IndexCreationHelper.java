@@ -15,25 +15,25 @@ import static edu.blue.Utils.getIndexFilePath;
 import static edu.blue.Utils.getTableFilePath;
 
 /**
- * This helper class is invoked to create a index on one of the tables columns.
+ * This helper is used create a index on one of the tables columns.
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class IndexCreationHelper {
 
-    private static final Logger LOGGER = Logger.getLogger(IndexCreationHelper.class.getName());
+    private static final Logger logger = Logger.getLogger(IndexCreationHelper.class.getName());
 
     /**
-     * This method performs the creation of index operation
+     * This method to create index
      *
      * @param createIndexString
      */
-    public static void performIndexCreation(String createIndexString) {
+    public static void handleIndexCreation(String createIndexString) {
         ArrayList<String> createIndexTokens = new ArrayList<>(Arrays.asList(createIndexString.split(" ")));
         try {
             if (!createIndexTokens.get(2).equals("on") || !createIndexString.contains("(")
                     || !createIndexString.contains(")") && createIndexTokens.size() < 4) {
-                System.out.println("Error! Invalid Syntax!");
+                System.out.println("Invalid Syntax!");
                 return;
             }
 
@@ -42,38 +42,38 @@ public class IndexCreationHelper {
             String columnName = createIndexString
                     .substring(createIndexString.indexOf("(") + 1, createIndexString.indexOf(")")).trim();
 
-            /* Checks if the required column Index already exists */
+            // Checks if the required column Index already exists
             if (new File(Utils.getIndexFilePath(tableName, columnName)).exists()) {
-                System.out.println("Index already exists!");
+                System.out.println("Column Index already exists");
                 return;
             }
 
             RandomAccessFile tableFile = new RandomAccessFile(getTableFilePath(tableName), "rw");
 
-            TableInfoHandler metaData = new TableInfoHandler(tableName);
+            TableInfoHandler tableMetaData = new TableInfoHandler(tableName);
 
-            if (!metaData.tableExists) {
-                System.out.println("Invalid Table name!");
+            if (!tableMetaData.tableExists) {
+                System.out.println("Invalid Table");
                 tableFile.close();
                 return;
             }
 
-            int columnOrdinal = metaData.columnNamesList.indexOf(columnName);
+            int columnOrdinal = tableMetaData.columnNamesList.indexOf(columnName);
 
             if (columnOrdinal < 0) {
-                System.out.println("Invalid column name(s)!");
+                System.out.println("Invalid column name(s)");
                 tableFile.close();
                 return;
             }
 
 
-            /* Creates a Index file*/
+            // Creates a Index file
             RandomAccessFile indexFile = new RandomAccessFile(getIndexFilePath(tableName, columnName), "rw");
             Page.addNewPage(indexFile, PageNodeType.LEAF_INDEX, -1, -1);
 
 
-            if (metaData.recordsCount > 0) {
-                BPlusTree bPlusOneTree = new BPlusTree(tableFile, metaData.rootPageNumber, metaData.tableName);
+            if (tableMetaData.recordsCount > 0) {
+                BPlusTree bPlusOneTree = new BPlusTree(tableFile, tableMetaData.rootPageNumber, tableMetaData.tableName);
                 for (int pageNo : bPlusOneTree.getAllLeaveNodes()) {
                     Page page = new Page(tableFile, pageNo);
                     BTree bTree = new BTree(indexFile);
@@ -88,7 +88,7 @@ public class IndexCreationHelper {
             tableFile.close();
 
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception in creating Index");
+            logger.log(Level.SEVERE, "Exception while creating Index");
         }
 
     }
