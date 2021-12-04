@@ -3,46 +3,56 @@ package edu.ottawa.extensions;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-/**
- * Conversion Helper class to convert data types supported into byte for storage
- * and vice versa for display and operations
- *
- * @author Team Blue
- */
+//This is a helper class to convert supported data types supported during storage and display.
 public class DBDatatypeConversionHelper {
 
-    /**
-     * Helper that return value as byte array
-     *
-     * @param data
-     * @return
-     */
+    //Helper returns value as byte array
     public static Byte[] byteToBytes(final byte[] data) {
-        int length = data == null ? 0 : data.length;
-        Byte[] result = new Byte[length];
-        for (int i = 0; i < length; i++)
+        int data_length = data == null ? 0 : data.length;
+        Byte[] result = new Byte[data_length];
+        for (int i = 0; i < data_length; i++)
             result[i] = data[i];
         return result;
     }
 
-    /**
-     * Unboxing wrapper helper
-     *
-     * @param data
-     * @return
-     */
+    //Unboxing helper used for wrapping
     public static byte[] Bytestobytes(final Byte[] data) {
 
-        if (data == null) System.out.println("! Data is null");
+        if (data == null) System.out.println("Data is null");
 
-        int length = data == null ? 0 : data.length;
-        byte[] result = new byte[length];
-        for (int i = 0; i < length; i++)
+        int data_length = data == null ? 0 : data.length;
+        byte[] result = new byte[data_length];
+        for (int i = 0; i < data_length; i++)
             result[i] = data[i];
         return result;
     }
 
-    /* Function that return bytes from primitive data types*/
+    /* Function to get primitives from byte values*/
+    public static byte byteFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).get();
+    }
+
+    public static short shortFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getShort();
+    }
+
+    public static int intFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getInt();
+    }
+
+    public static long longFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getLong();
+    }
+
+    public static float floatFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getFloat();
+    }
+
+    public static double doubleFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getDouble();
+    }
+
+    //Function that return bytes from primitive data types
     public static Byte[] shortToBytes(final short data) {
         return byteToBytes(ByteBuffer.allocate(Short.BYTES).order(ByteOrder.BIG_ENDIAN).putShort(data).array());
     }
@@ -71,28 +81,4 @@ public class DBDatatypeConversionHelper {
         return (ByteBuffer.allocate(Double.BYTES).putDouble(data).array());
     }
 
-    /* Function to get primitives from byte values*/
-    public static byte byteFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).get();
-    }
-
-    public static short shortFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getShort();
-    }
-
-    public static int intFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getInt();
-    }
-
-    public static long longFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getLong();
-    }
-
-    public static float floatFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getFloat();
-    }
-
-    public static double doubleFromByteArray(byte[] bytes) {
-        return ByteBuffer.wrap(bytes).getDouble();
-    }
 }

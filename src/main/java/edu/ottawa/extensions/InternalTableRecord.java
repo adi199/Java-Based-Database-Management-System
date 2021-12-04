@@ -1,10 +1,7 @@
 package edu.ottawa.extensions;
 
-/**
- * A holder record of type Interior Record for a table
- *
- * @author Team Blue
- */
+
+//This is a holder record of type interior record for a table
 public class InternalTableRecord {
     public int rowId;
     public int leftPageNumber;
