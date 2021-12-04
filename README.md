@@ -53,9 +53,9 @@ drop table user;
 
 
 
-### Authored by Team Blue
-- Chetan Garikapati (CXG190009)
-- Prajjwal Bhargava (PXB190028)
-- Jessica Su (JXS190058)
-- Pengchao Cai (PXC190029)
-- Nikhil Bollepalli (NXB200019)
+### Authored by Team Ottawa
+- Aditya Singh (AXS210045)
+- Nirali Patel (NPP200000)
+- Preetham Rao Gottukula (PXG210001)
+- Sri Harsha Golla (SXG200003)
+- Yash Nadkarni (YDN200000)
