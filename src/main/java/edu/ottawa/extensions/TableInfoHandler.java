@@ -11,14 +11,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This Helper class is used to manipulate the meta data of the database tables
+ * This Helper class is used to manipulate the meta-data of the database tables
  * <br> davisbase_tables and davisbas_columns <br>
- * we have to update the  following meta data of the table whenever a record operations of
+ * we have to update the  following meta-data of the table whenever a record operations of
  * insert or delete is performed
  * 1. Record_count
  * 2. Root page Number
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class TableInfoHandler {
 
@@ -40,14 +40,11 @@ public class TableInfoHandler {
             RandomAccessFile davisbaseTablesCatalog = new RandomAccessFile(
                     Utils.getTableFilePath(DBOperationsProcessor.tablesTable), "r");
 
-            /*Obtain the root page */
             int rootPageNumber = DBOperationsProcessor.getRootPageNumber(davisbaseTablesCatalog);
 
             BPlusTree bplusTree = new BPlusTree(davisbaseTablesCatalog, rootPageNumber, tableName);
-            /*Search all Leaf pages of the davisbase_tables*/
             for (Integer pageNumber : bplusTree.getLeafNodes()) {
                 Page currentPage = new Page(davisbaseTablesCatalog, pageNumber);
-                /*Search through all of the records*/
                 for (DataRecordForTable tableRecord : currentPage.getPageRecords()) {
 
                     if (tableRecord.getColumnsList().get(0).fieldValue.equals(tableName)) {
@@ -73,7 +70,7 @@ public class TableInfoHandler {
         }
     }
 
-    public List<Integer> getOrdinalPostion(List<String> columnsList) {
+    public List<Integer> getOrdinalPosition(List<String> columnsList) {
         List<Integer> ordinalPostions = new ArrayList<>();
         for (String currentColumn : columnsList) {
             ordinalPostions.add(columnNamesList.indexOf(currentColumn));
@@ -96,7 +93,6 @@ public class TableInfoHandler {
             columnNamesList = new ArrayList<>();
             BPlusTree bPlusOneTree = new BPlusTree(davisbaseColumnsFile, rootPageNumber, tableName);
 
-            /* Obtain all columns from the davisbase_column table and iterate all the leaf pagesto find the records with the matching table name */
             for (Integer currentPageNumber : bPlusOneTree.getLeafNodes()) {
 
                 Page page = new Page(davisbaseColumnsFile, currentPageNumber);
@@ -156,7 +152,7 @@ public class TableInfoHandler {
 
 
     /**
-     * Method to update the metedata
+     * Method to update the mete-data
      */
     public void updateTableMetaData() {
 
@@ -176,7 +172,7 @@ public class TableInfoHandler {
             TableInfoHandler tablesMetaData = new TableInfoHandler(DBOperationsProcessor.tablesTable);
 
             WhereConditionProcessor condition = new WhereConditionProcessor(DBSupportedDataType.TEXT);
-            condition.setColumName("table_name");
+            condition.setColumnName("table_name");
             condition.columnOrdinal = 0;
             condition.setConditionValue(tableName);
             condition.setOperator("=");

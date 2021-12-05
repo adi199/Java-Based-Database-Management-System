@@ -17,10 +17,6 @@ public class Commands {
         /* Clean up command string so that each token is separated by a single space */
         userCommand = userCommand.replaceAll("\n", " ");    // Remove newlines
         userCommand = userCommand.replaceAll("\r", " ");    // Remove carriage returns
-        /*userCommand = userCommand.replaceAll(",", " , ");   // Tokenize commas
-        userCommand = userCommand.replaceAll("\\(", " ( "); // Tokenize left parentheses
-        userCommand = userCommand.replaceAll("\\)", " ) "); // Tokenize right parentheses
-        userCommand = userCommand.replaceAll("( )+", " ");  // Reduce multiple spaces to a single space*/
 
         /* commandTokens is an array of Strings that contains one lexical token per array
          * element. The first token can be used to determine the type of command
@@ -86,7 +82,6 @@ public class Commands {
     }
 
     public static void parseCreateTableOrIndex(String command) {
-        /* TODO: Before attempting to create new table file, check if the table already exists */
 
         System.out.println("Stub: parseCreateTable method");
         System.out.println("Command: " + command);
@@ -105,40 +100,14 @@ public class Commands {
         /*  Code to create a .tbl file to contain table data */
         try {
             CreateTableHelper.handleCreateTableOperation(command);
-            /*  Create RandomAccessFile tableFile in read-write mode.
-             *  Note that this doesn't create the table file in the correct directory structure
-             */
-
-            /* Create a new table file whose initial size is one page (i.e. page size number of bytes) */
-            /*RandomAccessFile tableFile = new RandomAccessFile("data/user_data/" + tableFileName, "rw");
-            tableFile.setLength(Settings.getPageSize());
-
-            *//* Write page header with initial configuration *//*
-            tableFile.seek(0);
-            tableFile.writeInt(0x0D);       // Page type
-            tableFile.seek(0x02);
-            tableFile.writeShort(0x01FF);   // Offset beginning of cell content area
-            tableFile.seek(0x06);
-            tableFile.writeInt(0xFFFFFFFF); // Sibling page to the right
-            tableFile.seek(0x0A);
-            tableFile.writeInt(0xFFFFFFFF); // Parent page*/
         } catch (Exception e) {
             System.out.println(e);
         }
-
-        /*  Code to insert an entry in the TABLES meta-data for this new table.
-         *  i.e. New row in davisbase_tables if you're using that mechanism for meta-data.
-         */
-
-        /*  Code to insert entries in the COLUMNS meta data for each column in the new table.
-         *  i.e. New rows in davisbase_columns if you're using that mechanism for meta-data.
-         */
     }
 
     public static void show(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the show method");
-        /* TODO: Your code goes here */
         parseQuery(commandStringToTokenList("select * from davisbase_tables"));
     }
 
@@ -148,14 +117,12 @@ public class Commands {
     public static void parseInsert(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the insertRecord method");
-        /* TODO: Your code goes here */
         InsertOperationHelper.handleInsertOperation(tokensToCommandString(commandTokens));
     }
 
     public static void parseDelete(ArrayList<String> commandTokens) {
         System.out.println("Command: " + tokensToCommandString(commandTokens));
         System.out.println("Stub: This is the deleteRecord method");
-        /* TODO: Your code goes here */
         DeleteOperationHelper.handleDeleteOperation(tokensToCommandString(commandTokens));
     }
 

@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Holder enum to define type of Page working with
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public enum PageNodeType {
     INTERIOR_TYPE((byte) 5),

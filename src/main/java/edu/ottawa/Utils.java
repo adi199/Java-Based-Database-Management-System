@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * @author Team Blue - Partial Author
+ * @author Team Otawa - Partial Author
  */
 public class Utils {
 
@@ -77,7 +77,7 @@ public class Utils {
                     {
                         condition.setOperator(WhereConditionProcessor.supportedOperators[i]);
                         condition.setConditionValue(whereClauseTokens.get(1).trim());
-                        condition.setColumName(whereClauseTokens.get(0).trim());
+                        condition.setColumnName(whereClauseTokens.get(0).trim());
                         break;
                     }
 

@@ -3,9 +3,9 @@ package edu.ottawa.extensions;
 import java.io.File;
 
 /**
- * This helper class is called initially to setup the database if its not already setup
+ * This class is called initially to set up the database if it's not already setup
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class SetupDatabase {
     public static void initDB() {

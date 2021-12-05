@@ -74,7 +74,7 @@ public class DBOperationsProcessor {
         int count = 0;
 
 
-        List<Integer> indexedPositions = tableMetaData.getOrdinalPostion(columNames);
+        List<Integer> indexedPositions = tableMetaData.getOrdinalPosition(columNames);
 
         int k = 0;
         Map<Integer, CellRecords> newValueMap = new HashMap<>();
@@ -178,7 +178,7 @@ public class DBOperationsProcessor {
     public void selectRecordsFromTable(TableInfoHandler tableMetaData, List<String> columNames, WhereConditionProcessor condition) throws IOException {
 
         //The order might be different from the table positions
-        List<Integer> indexPositionList = tableMetaData.getOrdinalPostion(columNames);
+        List<Integer> indexPositionList = tableMetaData.getOrdinalPosition(columNames);
 
         System.out.println();
 

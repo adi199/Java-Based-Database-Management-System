@@ -64,7 +64,7 @@ public class BPlusTree {
     //returns leave nodes
     public List<Integer> getLeafNodes(WhereConditionProcessor cndtn) throws IOException {
 
-        if (cndtn == null || cndtn.getOperation() == SupportedOperators.NOTEQUAL
+        if (cndtn == null || cndtn.getOperation() == SupportedOperators.NOT_EQUAL
                 || !(new File(Utils.getIndexFilePath(tableName, cndtn.columnName)).exists())) {
             /*as there is no index  brute force  */
 

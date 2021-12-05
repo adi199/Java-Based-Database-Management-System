@@ -1,7 +1,7 @@
 package edu.ottawa;
 
 public class Settings {
-	static String prompt = "davisql-TeamBlue> ";
+	static String prompt = "davisql-TeamOttawa> ";
 	static String version = "v1.2";
 	static String copyright = "©2020 Chris Irwin Davis";
 	static boolean isExit = false;

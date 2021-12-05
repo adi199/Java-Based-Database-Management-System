@@ -65,14 +65,14 @@ public class BTree {
                 rId.addAll(page.pointer.get(indexValue).rowIdList);
         }
 
-        if (oprtnTyp == SupportedOperators.LESSTHAN || oprtnTyp == SupportedOperators.LESSTHANOREQUAL) {
+        if (oprtnTyp == SupportedOperators.LESS_THAN || oprtnTyp == SupportedOperators.LESS_THAN_OR_EQUAL) {
             if (page.pageType == PageNodeType.LEAF_INDEX)
                 rId.addAll(fetchAllLeftRIds(page.parPageNum, idxVal[0]));
             else
                 rId.addAll(fetchAllLeftRIds(page.pageNumber, condition.comparisonValue));
         }
 
-        if (oprtnTyp == SupportedOperators.GREATERTHAN || oprtnTyp == SupportedOperators.GREATERTHANOREQUAL) {
+        if (oprtnTyp == SupportedOperators.GREATER_THAN || oprtnTyp == SupportedOperators.GREATER_THAN_OR_EQUAL) {
             if (page.pageType == PageNodeType.LEAF_INDEX)
                 rId.addAll(fetchAllRightRids(page.parPageNum, idxVal[idxVal.length - 1]));
             else

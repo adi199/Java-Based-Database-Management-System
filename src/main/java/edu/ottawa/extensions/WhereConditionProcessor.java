@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 /**
  * WhereConditionProcessor class This class helps with handling of logic for where clauses
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class WhereConditionProcessor {
 
@@ -25,7 +25,7 @@ public class WhereConditionProcessor {
     public static String[] supportedOperators = {"<=", ">=", "<>", ">", "<", "="};
 
     /**
-     * Helps in converting the operator given by the user to SupportedOperators for processing
+     * convert the operator given by the user to SupportedOperators for processing
      *
      * @param strOperator
      * @return
@@ -33,17 +33,17 @@ public class WhereConditionProcessor {
     public static SupportedOperators getOperatorType(String strOperator) {
         switch (strOperator) {
             case ">":
-                return SupportedOperators.GREATERTHAN;
+                return SupportedOperators.GREATER_THAN;
             case "<":
-                return SupportedOperators.LESSTHAN;
+                return SupportedOperators.LESS_THAN;
             case "=":
-                return SupportedOperators.EQUALTO;
+                return SupportedOperators.EQUAL_TO;
             case ">=":
-                return SupportedOperators.GREATERTHANOREQUAL;
+                return SupportedOperators.GREATER_THAN_OR_EQUAL;
             case "<=":
-                return SupportedOperators.LESSTHANOREQUAL;
+                return SupportedOperators.LESS_THAN_OR_EQUAL;
             case "<>":
-                return SupportedOperators.NOTEQUAL;
+                return SupportedOperators.NOT_EQUAL;
             default:
                 System.out.println("! Invalid operator \"" + strOperator + "\"");
                 return SupportedOperators.INVALID;
@@ -51,7 +51,7 @@ public class WhereConditionProcessor {
     }
 
     /**
-     * Helps to perform comparison operation
+     * perform comparison operation
      *
      * @param value1 input
      * @param value2 db value
@@ -74,7 +74,7 @@ public class WhereConditionProcessor {
     }
 
     /**
-     * Helper for - operations
+     * Handle operations
      *
      * @param operation
      * @param difference
@@ -82,17 +82,17 @@ public class WhereConditionProcessor {
      */
     private boolean doOperationOnDifference(SupportedOperators operation, int difference) {
         switch (operation) {
-            case LESSTHANOREQUAL:
+            case LESS_THAN_OR_EQUAL:
                 return difference <= 0;
-            case GREATERTHANOREQUAL:
+            case GREATER_THAN_OR_EQUAL:
                 return difference >= 0;
-            case NOTEQUAL:
+            case NOT_EQUAL:
                 return difference != 0;
-            case LESSTHAN:
+            case LESS_THAN:
                 return difference < 0;
-            case GREATERTHAN:
+            case GREATER_THAN:
                 return difference > 0;
-            case EQUALTO:
+            case EQUAL_TO:
                 return difference == 0;
             default:
                 return false;
@@ -100,7 +100,7 @@ public class WhereConditionProcessor {
     }
 
     /**
-     * Helper for performing string comparision operations
+     * performs string comparison operations
      *
      * @param currentValue
      * @param operation
@@ -112,7 +112,7 @@ public class WhereConditionProcessor {
 
 
     /**
-     * Does comparison on current value  from db with the comparison value
+     * Does comparison on current value from db with the comparison value
      *
      * @param currentValue
      * @return
@@ -129,19 +129,19 @@ public class WhereConditionProcessor {
         else {
 
             switch (operation) {
-                case LESSTHANOREQUAL:
+                case LESS_THAN_OR_EQUAL:
                     return Long.parseLong(currentValue) <= Long.parseLong(comparisonValue);
-                case GREATERTHANOREQUAL:
+                case GREATER_THAN_OR_EQUAL:
                     return Long.parseLong(currentValue) >= Long.parseLong(comparisonValue);
 
-                case NOTEQUAL:
+                case NOT_EQUAL:
                     return Long.parseLong(currentValue) != Long.parseLong(comparisonValue);
-                case LESSTHAN:
+                case LESS_THAN:
                     return Long.parseLong(currentValue) < Long.parseLong(comparisonValue);
 
-                case GREATERTHAN:
+                case GREATER_THAN:
                     return Long.parseLong(currentValue) > Long.parseLong(comparisonValue);
-                case EQUALTO:
+                case EQUAL_TO:
                     return Long.parseLong(currentValue) == Long.parseLong(comparisonValue);
 
                 default:
@@ -154,7 +154,7 @@ public class WhereConditionProcessor {
     }
 
     /**
-     * Helper to set condition values during intermediate operations
+     * set condition values during intermediate operations
      *
      * @param conditionValue
      */
@@ -165,7 +165,7 @@ public class WhereConditionProcessor {
 
     }
 
-    public void setColumName(String columnName) {
+    public void setColumnName(String columnName) {
         this.columnName = columnName;
     }
 
@@ -192,18 +192,18 @@ public class WhereConditionProcessor {
      */
     private SupportedOperators negateOperator() {
         switch (this.operator) {
-            case LESSTHANOREQUAL:
-                return SupportedOperators.GREATERTHAN;
-            case GREATERTHANOREQUAL:
-                return SupportedOperators.LESSTHAN;
-            case NOTEQUAL:
-                return SupportedOperators.EQUALTO;
-            case LESSTHAN:
-                return SupportedOperators.GREATERTHANOREQUAL;
-            case GREATERTHAN:
-                return SupportedOperators.LESSTHANOREQUAL;
-            case EQUALTO:
-                return SupportedOperators.NOTEQUAL;
+            case LESS_THAN_OR_EQUAL:
+                return SupportedOperators.GREATER_THAN;
+            case GREATER_THAN_OR_EQUAL:
+                return SupportedOperators.LESS_THAN;
+            case NOT_EQUAL:
+                return SupportedOperators.EQUAL_TO;
+            case LESS_THAN:
+                return SupportedOperators.GREATER_THAN_OR_EQUAL;
+            case GREATER_THAN:
+                return SupportedOperators.LESS_THAN_OR_EQUAL;
+            case EQUAL_TO:
+                return SupportedOperators.NOT_EQUAL;
             default:
                 System.out.println("! Invalid operator \"" + this.operator + "\"");
                 return SupportedOperators.INVALID;

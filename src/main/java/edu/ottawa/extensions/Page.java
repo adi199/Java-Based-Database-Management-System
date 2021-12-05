@@ -7,9 +7,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This helper class handles all the page operations functions
+ * This class handles all operations related to page
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public class Page {
 
@@ -27,7 +27,7 @@ public class Page {
     public int rPage;
     public int parPageNum;
     private List<DataRecordForTable> records;
-    boolean isrefresh = false;
+    boolean isRefreshed = false;
     long start;
     int lastId;
     int remainSpace;
@@ -54,10 +54,10 @@ public class Page {
 
             this.binaryFile = file;
             lastId = 0;
-            start = DBOperationsProcessor.pageSize * pageNumber;
+            start = (long) DBOperationsProcessor.pageSize * pageNumber;
             binaryFile.seek(start);
-            pageType = PageNodeType.get(binaryFile.readByte()); // pagetype
-            binaryFile.readByte(); // unused
+            pageType = PageNodeType.get(binaryFile.readByte());
+            binaryFile.readByte();
             noOfCells = binaryFile.readShort();
             startOffSet = binaryFile.readShort();
             remainSpace = startOffSet - 0x10 - (noOfCells * 2);
@@ -71,7 +71,7 @@ public class Page {
             if (pageType == PageNodeType.LEAF_TYPE)
                 fillTableRecords();
             if (pageType == PageNodeType.INTERIOR_TYPE)
-                filllChild();
+                fillLChild();
             if (pageType == PageNodeType.INTERIOR_INDEX || pageType == PageNodeType.LEAF_INDEX)
                 fillIndexRecords();
 
@@ -83,7 +83,7 @@ public class Page {
     /**
      * Returns Index values
      *
-     * @return
+     * @return List of String
      */
     public List<String> fetchIdxVal() {
         List<String> strIndexValues = new ArrayList<>();
@@ -112,7 +112,7 @@ public class Page {
      *
      * @param file
      * @param pageNumber
-     * @return
+     * @return Page Node Type
      * @throws IOException
      */
     public static PageNodeType getPageType(RandomAccessFile file, int pageNumber) throws IOException {
@@ -139,7 +139,7 @@ public class Page {
         try {
             int pageNumber = Long.valueOf((file.length() / DBOperationsProcessor.pageSize)).intValue();
             file.setLength(file.length() + DBOperationsProcessor.pageSize);
-            file.seek(DBOperationsProcessor.pageSize * pageNumber);
+            file.seek((long) DBOperationsProcessor.pageSize * pageNumber);
             file.write(pageType.getByteValue());
             file.write(0x00);
             file.writeShort(0);
@@ -171,7 +171,9 @@ public class Page {
             voffset += DBSupportedDataType.getLength(binaryFile.readByte());
         }
 
+        //Setting the position in the file
         binaryFile.seek(start + record.offsetRcrd + 7 + record.colDtype.length + voffset);
+        //Updating the record
         binaryFile.write(DBDatatypeConversionHelper.Bytestobytes(newValue));
 
     }
@@ -183,16 +185,14 @@ public class Page {
      */
     public void addNewColumn(ColumnValueConstrain columnInfo) {
         try {
-            addTableRow(DBOperationsProcessor.columnsTable, Arrays.asList(new CellRecords[]{
-                    new CellRecords(DBSupportedDataType.TEXT, columnInfo.tblName),
+            addTableRow(DBOperationsProcessor.columnsTable, Arrays.asList(new CellRecords(DBSupportedDataType.TEXT, columnInfo.tblName),
                     new CellRecords(DBSupportedDataType.TEXT, columnInfo.colname),
                     new CellRecords(DBSupportedDataType.TEXT, columnInfo.dataType.toString()),
                     new CellRecords(DBSupportedDataType.SMALLINT, columnInfo.ordPosition.toString()),
                     new CellRecords(DBSupportedDataType.TEXT, columnInfo.isNull ? "YES" : "NO"),
                     columnInfo.isPk ?
                             new CellRecords(DBSupportedDataType.TEXT, "PRI") : new CellRecords(DBSupportedDataType.NULL, "NULL"),
-                    new CellRecords(DBSupportedDataType.TEXT, columnInfo.isSame ? "YES" : "NO")
-            }));
+                    new CellRecords(DBSupportedDataType.TEXT, columnInfo.isSame ? "YES" : "NO")));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Exception while adding new column", e);
         }
@@ -214,12 +214,13 @@ public class Page {
         TableInfoHandler metaData = null;
         if (DBOperationsProcessor.dataStoreInitialized) {
             metaData = new TableInfoHandler(tableName);
-            if (!metaData.validateInsert(attributes))
+            if (!metaData.validateInsert(attributes)) {
                 return -1;
+            }
         }
 
         for (CellRecords attribute : attributes) {
-            //add value for the record body
+            //adding attribute to the record body
             recordBody.addAll(Arrays.asList(attribute.fieldValueByte));
 
             //Fill column Datatype for every attribute in the row
@@ -239,14 +240,14 @@ public class Page {
 
         reHeader.addAll(Arrays.asList(DBDatatypeConversionHelper.shortToBytes(plsize)));
         reHeader.addAll(Arrays.asList(DBDatatypeConversionHelper.intToBytes(lastId)));
-        reHeader.add(Integer.valueOf(colDataTypes.size()).byteValue()); /*columns count*/
-        reHeader.addAll(colDataTypes); /*column data types*/
+        reHeader.add(Integer.valueOf(colDataTypes.size()).byteValue());
+        reHeader.addAll(colDataTypes);
 
         addNewPageRecord(reHeader.toArray(new Byte[reHeader.size()]),
                 recordBody.toArray(new Byte[recordBody.size()])
         );
 
-        isrefresh = true;
+        isRefreshed = true;
         if (DBOperationsProcessor.dataStoreInitialized) {
             metaData.recordsCount++;
             metaData.updateTableMetaData();
@@ -255,12 +256,10 @@ public class Page {
     }
 
     public List<DataRecordForTable> getPageRecords() {
-
-        if (isrefresh)
+        if (isRefreshed) {
             fillTableRecords();
-
-        isrefresh = false;
-
+        }
+        isRefreshed = false;
         return records;
     }
 
@@ -298,7 +297,7 @@ public class Page {
         TableInfoHandler metaData = new TableInfoHandler(tableName);
         metaData.recordsCount--;
         metaData.updateTableMetaData();
-        isrefresh = true;
+        isRefreshed = true;
 
     }
 
@@ -327,12 +326,10 @@ public class Page {
 
         short cStart = startOffSet;
         short newcStart = Integer.valueOf((cStart - recordBody.length - reHeader.length - 2)).shortValue();
-        binaryFile.seek(pageNumber * DBOperationsProcessor.pageSize + newcStart);
+        binaryFile.seek((long) pageNumber * DBOperationsProcessor.pageSize + newcStart);
 
-        /*record head*/
-        binaryFile.write(DBDatatypeConversionHelper.Bytestobytes(reHeader)); // datatypes
+        binaryFile.write(DBDatatypeConversionHelper.Bytestobytes(reHeader));
 
-        /*body of the record*/
         binaryFile.write(DBDatatypeConversionHelper.Bytestobytes(recordBody));
 
         binaryFile.seek(start + 0x10 + (noOfCells * 2));
@@ -357,19 +354,19 @@ public class Page {
      */
     private void handleIndexOverflow() throws IOException {
         if (pageType == PageNodeType.LEAF_INDEX) {
-            /*incase the current page is the root*/
+            /*If the current page is the root*/
             if (parPageNum == -1) {
                 parPageNum = addNewPage(binaryFile, PageNodeType.INTERIOR_INDEX, pageNumber, -1);
             }
-            /*handle creation of new left Page*/
-            int newLeftLeafpageNumber = addNewPage(binaryFile, PageNodeType.LEAF_INDEX, pageNumber, parPageNum);
+            /*Handle creation of new left Page*/
+            int newLeftLeafPageNumber = addNewPage(binaryFile, PageNodeType.LEAF_INDEX, pageNumber, parPageNum);
 
             setParent(parPageNum);
 
             /*Splitting record and inserting to left node*/
             IndexNode insertNodeTemp = this.insertNode;
 
-            Page leftLeafPage = new Page(binaryFile, newLeftLeafpageNumber);
+            Page leftLeafPage = new Page(binaryFile, newLeftLeafPageNumber);
             IndexNode toInsertParentIndexNode = splitIndexRecordsBetweenPages(leftLeafPage);
 
 
@@ -380,7 +377,7 @@ public class Page {
 
             if (comparisonResult == 0) {
                 toInsertParentIndexNode.rowId.addAll(insertNodeTemp.rowId);
-                parentPage.addIndex(toInsertParentIndexNode, newLeftLeafpageNumber);
+                parentPage.addIndex(toInsertParentIndexNode, newLeftLeafPageNumber);
                 shiftPage(parentPage);
                 return;
             } else if (comparisonResult < 0) {
@@ -390,7 +387,7 @@ public class Page {
                 addIndex(insertNodeTemp);
             }
 
-            parentPage.addIndex(toInsertParentIndexNode, newLeftLeafpageNumber);
+            parentPage.addIndex(toInsertParentIndexNode, newLeftLeafPageNumber);
 
         } else {
             /*multilevel splitting*/
@@ -418,11 +415,11 @@ public class Page {
                 parPageNum = addNewPage(binaryFile, PageNodeType.INTERIOR_INDEX, pageNumber, -1);
             }
             //creating a new interior page
-            int newLeftInteriorpageNumber = addNewPage(binaryFile, PageNodeType.INTERIOR_INDEX, pageNumber, parPageNum);
+            int newLeftInteriorPageNumber = addNewPage(binaryFile, PageNodeType.INTERIOR_INDEX, pageNumber, parPageNum);
             setParent(parPageNum);
 
             IndexNode insertNodeTemp = this.insertNode;
-            Page leftInteriorPage = new Page(binaryFile, newLeftInteriorpageNumber);
+            Page leftInteriorPage = new Page(binaryFile, newLeftInteriorPageNumber);
 
             IndexNode toInsertParentIndexNode = splitIndexRecordsBetweenPages(leftInteriorPage);
 
@@ -436,7 +433,7 @@ public class Page {
 
             if (comparisonResult == 0) {
                 toInsertParentIndexNode.rowId.addAll(insertNodeTemp.rowId);
-                parentPage.addIndex(toInsertParentIndexNode, newLeftInteriorpageNumber);
+                parentPage.addIndex(toInsertParentIndexNode, newLeftInteriorPageNumber);
                 shiftPage(parentPage);
                 return;
             } else if (comparisonResult < 0) {
@@ -446,7 +443,7 @@ public class Page {
                 addIndex(insertNodeTemp);
             }
 
-            parentPage.addIndex(toInsertParentIndexNode, newLeftInteriorpageNumber);
+            parentPage.addIndex(toInsertParentIndexNode, newLeftInteriorPageNumber);
 
         }
 
@@ -464,11 +461,11 @@ public class Page {
 
         noOfCells = 0;
         startOffSet = Long.valueOf(DBOperationsProcessor.pageSize).shortValue();
-        remainSpace = startOffSet - 0x10 - (noOfCells * 2); // this page will now be treated as a new page
-        byte[] emptybytes = new byte[512 - 16];
-        Arrays.fill(emptybytes, (byte) 0);
+        remainSpace = startOffSet - 0x10 - (noOfCells * 2);
+        byte[] emptyBytes = new byte[512 - 16];
+        Arrays.fill(emptyBytes, (byte) 0);
         binaryFile.seek(start + 16);
-        binaryFile.write(emptybytes);
+        binaryFile.write(emptyBytes);
         binaryFile.seek(start + 2);
         binaryFile.writeShort(noOfCells);
         binaryFile.seek(start + 4);
@@ -482,11 +479,11 @@ public class Page {
     /**
      * copies left half to current right page and return the middle Index node required to add to parent
      *
-     * @param newleftPage
+     * @param newLeftPage
      * @return
      * @throws IOException
      */
-    private IndexNode splitIndexRecordsBetweenPages(Page newleftPage) throws IOException {
+    private IndexNode splitIndexRecordsBetweenPages(Page newLeftPage) throws IOException {
 
         try {
             int mid = fetchIdxVal().size() / 2;
@@ -498,7 +495,7 @@ public class Page {
             HashMap<String, IndexRecord> pointerTemp = (HashMap<String, IndexRecord>) pointer.clone();
 
             for (int i = 0; i < mid; i++) {
-                newleftPage.addIndex(pointerTemp.get(indexValuesTemp[i]).fetchIdxRowRfrnce(), pointerTemp.get(indexValuesTemp[i]).leftPageNumber);
+                newLeftPage.addIndex(pointerTemp.get(indexValuesTemp[i]).fetchIdxRowRfrnce(), pointerTemp.get(indexValuesTemp[i]).leftPageNumber);
             }
 
             cleanPage();
@@ -525,24 +522,24 @@ public class Page {
      */
     private void handleTableOverFlow() throws IOException {
         if (pageType == PageNodeType.LEAF_TYPE) {
-            int newRightLeafpageNumber = addNewPage(binaryFile, pageType, -1, -1);
+            int newRightLeafPageNumber = addNewPage(binaryFile, pageType, -1, -1);
             if (parPageNum == -1) {
 
 
-                int newparPageNum = addNewPage(binaryFile, PageNodeType.INTERIOR_TYPE,
-                        newRightLeafpageNumber, -1);
+                int newParPageNum = addNewPage(binaryFile, PageNodeType.INTERIOR_TYPE,
+                        newRightLeafPageNumber, -1);
 
-                setrPageNumber(newRightLeafpageNumber);
-                setParent(newparPageNum);
+                setrPageNumber(newRightLeafPageNumber);
+                setParent(newParPageNum);
 
-                Page newParentPage = new Page(binaryFile, newparPageNum);
-                newparPageNum = newParentPage.addLeftTableChild(pageNumber, lastId);
+                Page newParentPage = new Page(binaryFile, newParPageNum);
+                newParPageNum = newParentPage.addLeftTableChild(pageNumber, lastId);
 
-                newParentPage.setrPageNumber(newRightLeafpageNumber);
+                newParentPage.setrPageNumber(newRightLeafPageNumber);
 
 
-                Page newLeafPage = new Page(binaryFile, newRightLeafpageNumber);
-                newLeafPage.setParent(newparPageNum);
+                Page newLeafPage = new Page(binaryFile, newRightLeafPageNumber);
+                newLeafPage.setParent(newParPageNum);
 
 
                 shiftPage(newLeafPage);
@@ -552,30 +549,30 @@ public class Page {
                 parPageNum = parentPage.addLeftTableChild(pageNumber, lastId);
 
 
-                parentPage.setrPageNumber(newRightLeafpageNumber);
+                parentPage.setrPageNumber(newRightLeafPageNumber);
 
 
-                setrPageNumber(newRightLeafpageNumber);
+                setrPageNumber(newRightLeafPageNumber);
 
 
-                Page newLeafPage = new Page(binaryFile, newRightLeafpageNumber);
+                Page newLeafPage = new Page(binaryFile, newRightLeafPageNumber);
                 newLeafPage.setParent(parPageNum);
 
                 shiftPage(newLeafPage);
             }
         } else {
 
-            int newRightLeafpageNumber = addNewPage(binaryFile, pageType, -1, -1);
+            int newRightLeafPageNumber = addNewPage(binaryFile, pageType, -1, -1);
             int newparPageNum = addNewPage(binaryFile, PageNodeType.INTERIOR_TYPE,
-                    newRightLeafpageNumber, -1);
+                    newRightLeafPageNumber, -1);
 
-            setrPageNumber(newRightLeafpageNumber);
+            setrPageNumber(newRightLeafPageNumber);
             setParent(newparPageNum);
             Page newParentPage = new Page(binaryFile, newparPageNum);
             newparPageNum = newParentPage.addLeftTableChild(pageNumber, lastId);
 
-            newParentPage.setrPageNumber(newRightLeafpageNumber);
-            Page newLeafPage = new Page(binaryFile, newRightLeafpageNumber);
+            newParentPage.setrPageNumber(newRightLeafPageNumber);
+            Page newLeafPage = new Page(binaryFile, newRightLeafPageNumber);
             newLeafPage.setParent(newparPageNum);
 
 
@@ -637,7 +634,7 @@ public class Page {
      * @throws IOException
      */
     public void setParent(int parPageNum) throws IOException {
-        binaryFile.seek(DBOperationsProcessor.pageSize * pageNumber + 0x0A);
+        binaryFile.seek((long) DBOperationsProcessor.pageSize * pageNumber + 0x0A);
         binaryFile.writeInt(parPageNum);
         this.parPageNum = parPageNum;
     }
@@ -649,7 +646,7 @@ public class Page {
      * @throws IOException
      */
     public void setrPageNumber(int rPageNumber) throws IOException {
-        binaryFile.seek(DBOperationsProcessor.pageSize * pageNumber + 0x06);
+        binaryFile.seek((long) DBOperationsProcessor.pageSize * pageNumber + 0x06);
         binaryFile.writeInt(rPageNumber);
         this.rPage = rPageNumber;
     }
@@ -680,7 +677,6 @@ public class Page {
         insertNode.leftPageNumber = leftpageNumber;
         List<Integer> rowIds = new ArrayList<>();
 
-        /*if the index already exists then delete the old record add the new row id to the array and insert the record*/
         List<String> ixValues = fetchIdxVal();
         if (fetchIdxVal().contains(node.indexValue.fieldValue)) {
             leftpageNumber = pointer.get(node.indexValue.fieldValue).leftPageNumber;
@@ -701,7 +697,6 @@ public class Page {
 
         List<Byte> recordHead = new ArrayList<>();
 
-        /*number of row ids*/
         List<Byte> recordBody = new ArrayList<>(Arrays.asList(Integer.valueOf(rowIds.size()).byteValue()));
 
         if (node.indexValue.dataType == DBSupportedDataType.TEXT)
@@ -712,8 +707,6 @@ public class Page {
 
         recordBody.addAll(Arrays.asList(node.indexValue.fieldValueByte));
 
-
-        /*List of Row Id*/
         for (Integer rowId : rowIds) {
             recordBody.addAll(Arrays.asList(DBDatatypeConversionHelper.intToBytes(rowId)));
         }
@@ -753,7 +746,7 @@ public class Page {
      */
     private void fillTableRecords() {
         short plsize;
-        byte noOfcolumns;
+        byte noOfColumns;
         records = new ArrayList<>();
         map = new HashMap<>();
         try {
@@ -766,12 +759,12 @@ public class Page {
 
                 plsize = binaryFile.readShort();
                 int rowId = binaryFile.readInt();
-                noOfcolumns = binaryFile.readByte();
+                noOfColumns = binaryFile.readByte();
 
                 if (lastId < rowId) lastId = rowId;
 
-                byte[] colDatatypes = new byte[noOfcolumns];
-                byte[] recordBody = new byte[plsize - noOfcolumns - 1];
+                byte[] colDatatypes = new byte[noOfColumns];
+                byte[] recordBody = new byte[plsize - noOfColumns - 1];
 
                 binaryFile.read(colDatatypes);
                 binaryFile.read(recordBody);
@@ -790,11 +783,11 @@ public class Page {
     /**
      * If interior page has no space fills the left children
      */
-    private void filllChild() {
+    private void fillLChild() {
         try {
             lChild = new ArrayList<>();
 
-            int lCpageNum;
+            int lCPageNum;
             int rowId;
             for (int i = 0; i < noOfCells; i++) {
                 binaryFile.seek(start + 0x10 + (i * 2));
@@ -803,9 +796,9 @@ public class Page {
                     continue;
                 binaryFile.seek(start + cStart);
 
-                lCpageNum = binaryFile.readInt();
+                lCPageNum = binaryFile.readInt();
                 rowId = binaryFile.readInt();
-                lChild.add(new InternalTableRecord(rowId, lCpageNum));
+                lChild.add(new InternalTableRecord(rowId, lCPageNum));
             }
         } catch (IOException ex) {
             LOGGER.log(Level.SEVERE, "Exception filling records from the page" ,ex);
@@ -822,7 +815,7 @@ public class Page {
             sIndexValues = new TreeSet<>();
             pointer = new HashMap<>();
 
-            int leftpageNumber = -1;
+            int leftPageNumber = -1;
             byte noOfRowIds;
             byte dataType;
             for (short i = 0; i < noOfCells; i++) {
@@ -833,9 +826,9 @@ public class Page {
                 binaryFile.seek(start + cStart);
 
                 if (pageType == PageNodeType.INTERIOR_INDEX)
-                    leftpageNumber = binaryFile.readInt();
+                    leftPageNumber = binaryFile.readInt();
 
-                short payload = binaryFile.readShort(); // payload
+                short payload = binaryFile.readShort();
 
                 noOfRowIds = binaryFile.readByte();
                 dataType = binaryFile.readByte();
@@ -852,7 +845,7 @@ public class Page {
                 }
 
                 IndexRecord record = new IndexRecord(i, DBSupportedDataType.get(dataType), noOfRowIds, indexValue
-                        , lstRowIds, leftpageNumber, rPage, pageNumber, cStart);
+                        , lstRowIds, leftPageNumber, rPage, pageNumber, cStart);
 
                 if (inType == DBSupportedDataType.TEXT || inType == null || record.fetchIdxRowRfrnce().indexValue.fieldValue.toUpperCase().equals("NULL"))
                     sIndexValues.add(record.fetchIdxRowRfrnce().indexValue.fieldValue);

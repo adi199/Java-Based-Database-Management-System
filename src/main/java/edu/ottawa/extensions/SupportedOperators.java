@@ -3,14 +3,14 @@ package edu.ottawa.extensions;
 /**
  * This enum holds supported comparision operations in the DB
  *
- * @author Team Blue
+ * @author Team Ottawa
  */
 public enum SupportedOperators {
-    GREATERTHANOREQUAL,
-    LESSTHAN,
+    GREATER_THAN_OR_EQUAL,
+    LESS_THAN,
     INVALID,
-    LESSTHANOREQUAL,
-    EQUALTO,
-    NOTEQUAL,
-    GREATERTHAN
+    LESS_THAN_OR_EQUAL,
+    EQUAL_TO,
+    NOT_EQUAL,
+    GREATER_THAN
 }
