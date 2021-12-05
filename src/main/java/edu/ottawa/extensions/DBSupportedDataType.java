@@ -3,11 +3,8 @@ package edu.ottawa.extensions;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Helper class to represent various data types fro DB
- *
- * @author Team Blue
- */
+
+//This helper class helps to represent various data types from database
 public enum DBSupportedDataType {
     NULL((byte) 0) {
         @Override
@@ -135,12 +132,8 @@ public enum DBSupportedDataType {
         return dataTypeLookup.get(value);
     }
 
-    /**
-     * GET the Datatype from String map eg: "INT" -- > DBSupportedDataType.INT
-     *
-     * @param text
-     * @return
-     */
+
+    //Function to get the datatype from string map to a DB Supported datatype.
     public static DBSupportedDataType get(String text) {
         return dataTypeStringLookup.get(text);
     }

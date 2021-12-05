@@ -9,11 +9,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Helps in performing operations on tables
- *
- * @author Team Blue
- */
+
+//The operations processor is helpful during performing operations on tables
 public class DBOperationsProcessor {
 
     private static final Logger LOGGER = Logger.getLogger(DBOperationsProcessor.class.getName());
@@ -32,22 +29,15 @@ public class DBOperationsProcessor {
         this.file = file;
     }
 
-    /**
-     * Checks if a record exists
-     *
-     * @param tableMetaData
-     * @param condition
-     * @return
-     * @throws IOException
-     */
+    //This function checks whether a record exists or not
     public boolean checkIfRecordExists(TableInfoHandler tableMetaData, WhereConditionProcessor condition) throws IOException {
 
         BPlusTree bPlusTree = new BPlusTree(file, tableMetaData.rootPageNumber, tableMetaData.tableName);
 
 
         for (Integer pageNo : bPlusTree.getLeafNodes(condition)) {
-            Page page = new Page(file, pageNo);
-            for (DataRecordForTable record : page.getPageRecords()) {
+            Page newpage = new Page(file, pageNo);
+            for (DataRecordForTable record : newpage.getPageRecords()) {
                 if (condition != null) {
                     if (!condition.checkCondition(record.getColumnsList().get(condition.columnOrdinal).fieldValue))
                         continue;
@@ -59,16 +49,70 @@ public class DBOperationsProcessor {
 
     }
 
-    /**
-     * Updates existing record in table
-     *
-     * @param tableMetaData
-     * @param condition
-     * @param columNames
-     * @param newValues
-     * @return
-     * @throws IOException
-     */
+    //this function will select a record from a specified table
+    public void selectRecordsFromTable(TableInfoHandler tableMetaData, List<String> columNames, WhereConditionProcessor condition) throws IOException {
+
+        //According to the table positions, the order might be different.
+        List<Integer> indexPositionList = tableMetaData.getOrdinalPosition(columNames);
+
+        System.out.println();
+
+        List<Integer> printingPositionList = new ArrayList<>();
+
+        int columnOutputLength = 0;
+        printingPositionList.add(columnOutputLength);
+        int completeTablePrintLength = 0;
+        if (showRowId) {
+            System.out.print("rowid");
+            System.out.print(Utils.printSeparator(" ", 5));
+            printingPositionList.add(10);
+            completeTablePrintLength += 10;
+        }
+
+
+        for (int i : indexPositionList) {
+            String columnName = tableMetaData.columnNameAttrList.get(i).colname;
+            columnOutputLength = Math.max(columnName.length()
+                    , tableMetaData.columnNameAttrList.get(i).dataType.getPrintOffset()) + 5;
+            printingPositionList.add(columnOutputLength);
+            System.out.print(columnName);
+            System.out.print(Utils.printSeparator(" ", columnOutputLength - columnName.length()));
+            completeTablePrintLength += columnOutputLength;
+        }
+        System.out.println();
+        System.out.println(Utils.printSeparator("-", completeTablePrintLength));
+
+        BPlusTree bPlusTree = new BPlusTree(file, tableMetaData.rootPageNumber, tableMetaData.tableName);
+
+        String currValue;
+        int count = 0;
+        for (Integer workingPageNumber : bPlusTree.getLeafNodes(condition)) {
+            Page page = new Page(file, workingPageNumber);
+            for (DataRecordForTable tableRecord : page.getPageRecords()) {
+                if (condition != null) {
+                    if (!condition.checkCondition(tableRecord.getColumnsList().get(condition.columnOrdinal).fieldValue))
+                        continue;
+                }
+                int columnCount = 0;
+                if (showRowId) {
+                    currValue = Integer.valueOf(tableRecord.rId).toString();
+                    System.out.print(currValue);
+                    System.out.print(Utils.printSeparator(" ", printingPositionList.get(++columnCount) - currValue.length()));
+                }
+                for (int w : indexPositionList) {
+                    currValue = tableRecord.getColumnsList().get(w).fieldValue;
+                    System.out.print(currValue);
+                    System.out.print(Utils.printSeparator(" ", printingPositionList.get(++columnCount) - currValue.length()));
+                }
+                System.out.println();
+                count++;
+            }
+        }
+        System.out.println();
+        System.out.println(count + " record(s) retrieved successfully.");
+    }
+
+    //This function updates existing record in the table
     public int updateRecords(TableInfoHandler tableMetaData, WhereConditionProcessor condition,
                              List<String> columNames, List<String> newValues) throws IOException {
         int count = 0;
@@ -122,7 +166,7 @@ public class DBOperationsProcessor {
                         attr = newValueMap.get(i);
                         attributeList.add(i, attr);
                     } else {
-                        //Delete the record ,insert a new update indexe
+                        //Delete the record ,insert a new update index;
                         if (condition != null)
                             optionalIndex = condition.columnOrdinal;
 
@@ -167,91 +211,15 @@ public class DBOperationsProcessor {
 
     }
 
-    /**
-     * Select records from specified table
-     *
-     * @param tableMetaData
-     * @param columNames
-     * @param condition
-     * @throws IOException
-     */
-    public void selectRecordsFromTable(TableInfoHandler tableMetaData, List<String> columNames, WhereConditionProcessor condition) throws IOException {
-
-        //The order might be different from the table positions
-        List<Integer> indexPositionList = tableMetaData.getOrdinalPosition(columNames);
-
-        System.out.println();
-
-        List<Integer> printingPositionList = new ArrayList<>();
-
-        int columnOutputLength = 0;
-        printingPositionList.add(columnOutputLength);
-        int completeTablePrintLength = 0;
-        if (showRowId) {
-            System.out.print("rowid");
-            System.out.print(Utils.printSeparator(" ", 5));
-            printingPositionList.add(10);
-            completeTablePrintLength += 10;
-        }
-
-
-        for (int i : indexPositionList) {
-            String columnName = tableMetaData.columnNameAttrList.get(i).colname;
-            columnOutputLength = Math.max(columnName.length()
-                    , tableMetaData.columnNameAttrList.get(i).dataType.getPrintOffset()) + 5;
-            printingPositionList.add(columnOutputLength);
-            System.out.print(columnName);
-            System.out.print(Utils.printSeparator(" ", columnOutputLength - columnName.length()));
-            completeTablePrintLength += columnOutputLength;
-        }
-        System.out.println();
-        System.out.println(Utils.printSeparator("-", completeTablePrintLength));
-
-        BPlusTree bPlusTree = new BPlusTree(file, tableMetaData.rootPageNumber, tableMetaData.tableName);
-
-        String currentValue;
-        int count = 0;
-        for (Integer workingPageNumber : bPlusTree.getLeafNodes(condition)) {
-            Page page = new Page(file, workingPageNumber);
-            for (DataRecordForTable tableRecord : page.getPageRecords()) {
-                if (condition != null) {
-                    if (!condition.checkCondition(tableRecord.getColumnsList().get(condition.columnOrdinal).fieldValue))
-                        continue;
-                }
-                int columnCount = 0;
-                if (showRowId) {
-                    currentValue = Integer.valueOf(tableRecord.rId).toString();
-                    System.out.print(currentValue);
-                    System.out.print(Utils.printSeparator(" ", printingPositionList.get(++columnCount) - currentValue.length()));
-                }
-                for (int w : indexPositionList) {
-                    currentValue = tableRecord.getColumnsList().get(w).fieldValue;
-                    System.out.print(currentValue);
-                    System.out.print(Utils.printSeparator(" ", printingPositionList.get(++columnCount) - currentValue.length()));
-                }
-                System.out.println();
-                count++;
-            }
-        }
-        System.out.println();
-        System.out.println(count + " record(s) retrieved successfully.");
-    }
-
-
-    /**
-     * Finds root
-     *
-     * @param binaryfile
-     * @return
-     */
+    //this will find the root page number
     public static int getRootPageNumber(RandomAccessFile binaryfile) {
         int rootpageValue = 0;
         try {
             for (int i = 0; i < binaryfile.length() / DBOperationsProcessor.pageSize; i++) {
                 binaryfile.seek(i * DBOperationsProcessor.pageSize + 0x0A);
-                int a = binaryfile.readInt();
+                int readnumber = binaryfile.readInt();
 
-                if (a == -1) {
+                if (readnumber == -1) {
                     return i;
                 }
             }
@@ -264,9 +232,9 @@ public class DBOperationsProcessor {
     }
 
     /**
-     * This static method creates the DavisBase data storage container and then
+     * The DavisBase data storage container is created by this static method which then
      * initializes two .tbl files to implement the two system tables,
-     * davisbase_tables and davisbase_columns. Calling this method will reset the DB     *
+     * davisbase_tables and davisbase_columns. Calling this method will reset the DB
      */
     public static void initializeDataBaseStore() {
 
@@ -315,10 +283,7 @@ public class DBOperationsProcessor {
             LOGGER.log(Level.SEVERE, "Failed creating dtabase_tables file", e);
         }
 
-        /*
-         *  Create davis base columns catalog
-         *
-         */
+        //Here we create davis base column catalog
         try {
             RandomAccessFile dbColumnFile = new RandomAccessFile(
                     Utils.getTableFilePath(columnsTable), "rw");
@@ -327,7 +292,7 @@ public class DBOperationsProcessor {
 
             short indexPosition = 1;
 
-            /*Add new values into davisbase_tables*/
+            /*Add new values into tables*/
             page.addNewColumn(new ColumnValueConstrain(tablesTable, DBSupportedDataType.TEXT, "table_name", true, false, indexPosition++));
             page.addNewColumn(new ColumnValueConstrain(tablesTable, DBSupportedDataType.INT, "record_count", false, false, indexPosition++));
             page.addNewColumn(new ColumnValueConstrain(tablesTable, DBSupportedDataType.SMALLINT, "avg_length", false, false, indexPosition++));
