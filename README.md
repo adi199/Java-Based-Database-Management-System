@@ -18,7 +18,7 @@ $ sudo apt install maven
 ## Compilation and Execution
 ```
 $ mvn clean package
-$ java -cp target/classes edu.ottawa.Davisbase
+$ java -cp target/classes edu.ottawa.DavisBase
 ```
 
 ## Supported Commands
@@ -53,9 +53,9 @@ drop table user;
 
 
 
-### Authored by Team Blue
-- Chetan Garikapati (CXG190009)
-- Prajjwal Bhargava (PXB190028)
-- Jessica Su (JXS190058)
-- Pengchao Cai (PXC190029)
-- Nikhil Bollepalli (NXB200019)
+### Authored by Team Ottawa
+- Aditya Singh (axs210045)
+- Nirali Patel (npp200000)
+- Preetham Rao Gottumukula (pxg210001)
+- Sri Harsha Golla (sxg200003)
+- Yash Nadkarni (ydn200000)
